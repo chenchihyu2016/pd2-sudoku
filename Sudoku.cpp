@@ -163,7 +163,7 @@ void Sudoku::find_value( int value ,int& posX, int& posY ){
 	}
 }
 void Sudoku::wash( Backtrack *Node, int counter, int number ){
-	if( number == 0){
+	if( number == 0 ){
 		for( int i = 0; i < counter; i++ )
 			Node[i].value = 0;
 	}
