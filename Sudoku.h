@@ -16,8 +16,8 @@ public:
   void solve();
   int count_zero();
   void find_value( int value ,int& posX, int& posY );
-  void wash( Backtrack *Node, int counter );
-  int assign_value( Backtrack *Node, int posX, int posY, int current_state );
+  void wash( Backtrack *Node, int counter, int number );
+  int assign_value( int mutiple, Backtrack *Node, int posX, int posY, int current_state );
   bool Safe( int posX, int posY, int value );
   bool row_safe( int posX, int value );
   bool col_safe( int posY, int value );
@@ -30,11 +30,10 @@ public:
   void rotate( int number );
   void transform();
   void reset_current_state( int& current_state );
-  void solve_sub( int multiple , Backtrack* Node, int posX, int posY, int current_state, int counter );
+  void solve_sub( int multiple , Backtrack* Node, int posX, int posY, int current_state, int counter, bool& track );
   void reset_the_sudoku( Backtrack* Node, int counter );
-  void find_value_reverse( int value , int& posX, int& posY );
-  void copyFunc( int row, int col );
-  bool isTheSame( int row, int col );
+  void copyFunc();
+  bool isTheSame();
   void giveQuestion();
 private:
   int** matrix;
