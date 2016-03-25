@@ -33,7 +33,7 @@ public:
   void solve_sub( int multiple , Backtrack* Node, int posX, int posY, int current_state, int counter, bool& track );
   void reset_the_sudoku( Backtrack* Node, int counter );
   void copyFunc();
-  bool isTheSame();
+  bool NotTheSame();
   void giveQuestion();
 private:
   int** matrix;
