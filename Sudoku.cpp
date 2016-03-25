@@ -45,8 +45,10 @@ bool Sudoku::row_exam(){
 	for( int i = 0; i < row; i++ ){
 		for( int l = 0; l < col; l++ )
 			array_a[l] = 0;
-		for( int j = 0; j < col; j++ )
+		for( int j = 0; j < col; j++ ){
+			if( matrix[i][j] == 0 ) continue;
 			array_a[ matrix[i][j] - 1 ]++;
+		}
 		for( int k = 0; k < col; k++ ){
 			if( array_a[k] > 1 ){
 				k = col;
@@ -65,8 +67,10 @@ bool Sudoku::col_exam(){
 	for( int j = 0; j < col; j++ ){
 		for( int i = 0; i < row; i++ )
 			array_b[i] = 0;
-		for( int i = 0; i < col; i++ )
-			array_b[ matrix[i][j] - 1 ]++;
+		for( int i = 0; i < row; i++ ){
+			if( matrix[i][j] == 0 ) continue;
+				array_b[ matrix[i][j] - 1 ]++;
+		}
 		for( int k = 0; k < row; k++ ){
 			if( array_b[k] > 1 ){
 				k = row;
@@ -88,6 +92,7 @@ bool Sudoku::cell_exam(){
 				array_c[k] = 0;
 			for( int p = i; p < i+3; p++ ){
 				for( int q = j; q < j+3; q++ ){
+					if ( matrix[p][q] == 0 ) continue;
 					array_c[ matrix[p][q] -1 ]++;
 				}
 			}
@@ -104,13 +109,13 @@ bool Sudoku::cell_exam(){
 	return control;
 }
 void Sudoku::solve(){
-	if( exam() == 0 )
+	int counter = count_zero();
+	if( exam() == 0 || counter >=  63 )
 		cout << "0" << endl;
 	else{
 		int posX,posY;
 		bool track = 1;
 		int current_state = 0;
-		int counter = count_zero();
 		copy = new int*[row];
 		for( int k = 0; k < row; k++ ) copy[k] = new int[col];
 
@@ -125,7 +130,7 @@ void Sudoku::solve(){
 			wash( Node, counter, 1 );
 			find_value( 0, posX, posY );
 			solve_sub( 2 , Node, posX, posY, current_state, counter, track );
-			if( !isTheSame() ){
+			if( isTheSame() ){
 				cout << '2' << endl;
 			}
 			else{
@@ -163,29 +168,19 @@ void Sudoku::find_value( int value ,int& posX, int& posY ){
 	}
 }
 void Sudoku::wash( Backtrack *Node, int counter, int number ){
-	if( number == 0 ){
-		for( int i = 0; i < counter; i++ )
-			Node[i].value = 0;
-	}
-	else
-		for( int i = 0; i < counter; i++ )
-			Node[i].value = 9;
+	int delta = ( number == 0 ? 0 : 10 ) ;
+	for( int i = 0; i < counter; i++ )
+		Node[i].value = delta;
 }
 int Sudoku::assign_value( int multiple, Backtrack *Node, int posX, int posY, int current_state ){
-	if( multiple == 1 ){
-		Node[current_state].value++;
+		int delta;
+		if( multiple == 1 ) delta = 1;
+		else delta = -1;
+		Node[current_state].value += delta;
 		while( !Safe( posX, posY, Node[current_state].value ) ){
-			Node[current_state].value++;
+			Node[current_state].value += delta;
 		}
 		return Node[current_state].value;
-	}
-	else if( multiple == 2 ){
-		Node[current_state].value--;
-		while( !Safe( posX, posY, Node[current_state].value ) ){
-			Node[current_state].value--;
-		}
-		return Node[current_state].value;
-	}
 }
 bool Sudoku::Safe( int posX, int posY, int value ){
 	if( row_safe( posX, value ) && col_safe( posY, value ) && cell_safe( posX, posY, value ) )
@@ -332,7 +327,7 @@ void Sudoku::reset_current_state( int& current_state ){
 void Sudoku::solve_sub( int multiple , Backtrack* Node, int posX, int posY, int current_state, int counter, bool& track  ){
 	while( current_state < counter ){
 	  int x = assign_value( multiple, Node, posX, posY, current_state );
-		if ( x <= 9 ){
+		if ( x <= 9 && x >= 1 ){
 			Node[current_state].x = posX;
 			Node[current_state].y = posY;
 			Node[current_state].value = x;
@@ -341,7 +336,8 @@ void Sudoku::solve_sub( int multiple , Backtrack* Node, int posX, int posY, int 
 			find_value( 0, posX, posY );
 		}
 		else {
-			Node[current_state].value = 0;
+			int delta = ( multiple == 1 ? 0 : 10);
+			Node[current_state].value = delta ;
 			matrix[posX][posY] = 0;
 			current_state--;
 			posX = Node[current_state].x;
@@ -369,7 +365,7 @@ bool Sudoku::isTheSame(){
 	bool control = 0;
 	for( int i = 0; i < row; i++){
 		for( int j = 0; j < col; j++ ){
-				if( copy[i][j] != matrix[i][j]){
+				if( copy[i][j] != matrix[i][j] ){
 					control = 1;
 					i = row;
 					j = col;
