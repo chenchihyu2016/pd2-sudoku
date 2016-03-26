@@ -5,15 +5,25 @@ using namespace std;
 
 Sudoku::Sudoku(){
 	matrix = new int*[9];
-	for( int i = 0; i < 9; i++ ) matrix[i] = new int[9];
+	copy = new int*[9];
+	for( int k = 0; k < 9; k++ ){
+		matrix[k] = new int[9];
+		copy[k] = new int[9];
+	}
 	for( int i = 0; i < 9; i++ ){
-		for(int j = 0; j < 9; j++  )
+		for(int j = 0; j < 9; j++ ){
 			matrix[i][j] = 0;
+			copy[i][j] = 0;
+		}
 	}
 }
 Sudoku::~Sudoku(){
-	//for( int k = 0; k < 9; k++ ) delete []matrix[k];
-	//delete []Sudoku;
+	for( int k = 0; k < 9; k++ ){
+		delete []matrix[k];
+		delete []copy[k];
+	}
+	delete []matrix;
+	delete []copy;
 }
 void Sudoku::readIn(){
 	int k, counter = 0;
@@ -52,7 +62,7 @@ bool Sudoku::row_exam(){
 			}
 		}
 	}
-	//delete []array_a;
+	delete []array_a;
 	return true;
 }
 bool Sudoku::col_exam(){
@@ -71,7 +81,7 @@ bool Sudoku::col_exam(){
 			}
 		}
 	}
-	//delete []array_b;
+	delete []array_b;
 	return true;
 }
 bool Sudoku::cell_exam(){
@@ -94,6 +104,7 @@ bool Sudoku::cell_exam(){
 			}
 		}
 	}
+	delete []array_c;
 	return true;
 }
 void Sudoku::solve(){
@@ -105,27 +116,25 @@ void Sudoku::solve(){
 	else{
 		int posX,posY;
 		int current_state = 0;
-		copy = new int*[9];
-		for( int k = 0; k < 9; k++ ) copy[k] = new int[9];
-		Backtrack *Node = new Backtrack[counter];
+		Backtrack *Stack = new Backtrack[counter];
 
-		wash( Node, counter, 0 );
+		wash( Stack, counter, 0 );
 		find_zero( posX, posY );
-		bool track = solve_sub( 0, Node, posX, posY, current_state, counter );
+		bool track = solve_sub( 0, Stack, posX, posY, current_state, counter );
 		copyFunc();
-		reset_the_sudoku( Node, counter );
+		reset_the_sudoku( Stack, counter );
 		if( track == false )
 			cout << '0' << endl;
 		else {
 			reset_current_state( current_state );
-			wash( Node, counter, 1 );
+			wash( Stack, counter, 1 );
 			find_zero( posX, posY );
-			solve_sub( 1, Node, posX, posY, current_state, counter );
+			solve_sub( 1, Stack, posX, posY, current_state, counter );
 			if( NotTheSame() )
 				cout << '2' << endl;
 			else{
 				cout << '1' << endl;
-				for( int i = 0; i < 9 ; i++){
+				for( int i = 0; i < 9 ; i++ ){
 					for( int j = 0; j < 9; j++ )
 						cout << copy[i][j] << " " ;
 					cout << endl;
@@ -136,40 +145,35 @@ void Sudoku::solve(){
 }
 int Sudoku::count_zero(){
 	int counter = 0 ;
-	for( int i = 0; i < 9; i++ ){
-		for( int j = 0; j < 9; j++ ){
+	for( int i = 0; i < 9; i++ )
+		for( int j = 0; j < 9; j++ )
 			if( matrix[i][j] == 0 )
 				counter++;
-		}
-	}
 	return counter;
 }
 void Sudoku::find_zero( int& posX, int& posY ){
 	for( int i = 0; i < 9; i++ ){
-		for( int j = 0; j < 9; j++ ){
+		for( int j = 0; j < 9; j++ )
 			if( matrix[i][j] == 0 ){
 				posX = i;
 				posY = j;
 				break;
 			}
-		}
-		//to break sth here
 	}
 }
-void Sudoku::wash( Backtrack *Node, int counter, int number ){
+void Sudoku::wash( Backtrack *Stack, int counter, int number ){
 	int init_value = ( number == 0 ? 0 : 10 ) ;
 	for( int i = 0; i < counter; i++ )
-		Node[i].value = init_value;
+		Stack[i].value = init_value;
 }
-int Sudoku::assign_value( bool multiple, Backtrack *Node, int posX, int posY, int current_state ){
+int Sudoku::assign_value( bool multiple, Backtrack *Stack, int posX, int posY, int current_state ){
 		int delta;
 		if( multiple == 0 ) delta = 1;
 		else delta = -1;
-		Node[current_state].value += delta;
-		while( !Safe( posX, posY, Node[current_state].value ) ){
-			Node[current_state].value += delta;
-		}
-		return Node[current_state].value;
+		Stack[current_state].value += delta;
+		while( !Safe( posX, posY, Stack[current_state].value ) )
+			Stack[current_state].value += delta;
+		return Stack[current_state].value;
 }
 bool Sudoku::Safe( int posX, int posY, int value ){
 	if( row_safe( posX, value ) && col_safe( posY, value ) && cell_safe( posX, posY, value ) )
@@ -177,64 +181,53 @@ bool Sudoku::Safe( int posX, int posY, int value ){
 	else return false;
 }
 bool Sudoku::row_safe( int posX, int value ){
-	for( int j = 0; j < 9; j++ ){
-		if( value == matrix[posX][j] ){
+	for( int j = 0; j < 9; j++ )
+		if( value == matrix[posX][j] )
 			return false;
-		}
-	}
 	return true;
 }
 bool Sudoku::col_safe( int posY, int value ){
-	for( int i= 0; i < 9; i++ ){
-		if( value == matrix[i][posY]){
+	for( int i= 0; i < 9; i++ )
+		if( value == matrix[i][posY])
 			return false;
-		}
-	}
 	return true;
 }
 bool Sudoku::cell_safe( int posX, int posY, int value ){
 	posX -= posX % 3;
 	posY -= posY % 3;
-	for( int r = posX; r <= posX+2; r++ ){
-		for( int t = posY; t <= posY+2; t++ ){
-			if( value == matrix[r][t]){
+	for( int r = posX; r <= posX+2; r++ )
+		for( int t = posY; t <= posY+2; t++ )
+			if( value == matrix[r][t])
 					return false;
-				}
-			}
-	}
 	return true;
 }
 void Sudoku::changeNum( int number_a, int number_b ){
-	for( int i = 0; i < 9; i++ ){
-		for( int j = 0; j < 9; j++ ){
-			if( matrix[i][j] == number_a )
-				matrix[i][j] = number_b;
-			else if ( matrix[i][j] == number_b )
-			  matrix[i][j] = number_a;
-		}
+	if ( number_a != number_b ){
+		for( int i = 0; i < 9; i++ ){
+			for( int j = 0; j < 9; j++ ){
+				if( matrix[i][j] == number_a )
+					matrix[i][j] = number_b;
+				else if ( matrix[i][j] == number_b )
+			  	matrix[i][j] = number_a;
+				}
+			}
 	}
 }
 void Sudoku::changeRow( int a, int b ){
 	if( a != 0 ) a = a*3;
 	if( b != 0 ) b = b*3;
-	if( a != b ){
-		for( int i = 0 ; i < 3; i++ ){
-			for( int j = 0 ; j < 9; j++ ){
+	if( a != b )
+		for( int i = 0 ; i < 3; i++ )
+			for( int j = 0 ; j < 9; j++ )
 				swap( &matrix[a+i][j], &matrix[b+i][j]);
-			}
-		}
-	}
 }
 void Sudoku::changeCol( int a, int b ){
 	if( a != 0 ) a = a*3;
 	if( b != 0 ) b = b*3;
-	if( a != b ){
-		for( int j = 0; j < 3; j++ ){
-			for( int i = 0; i < 9; i++ ){
+	if( a != b )
+		for( int j = 0; j < 3; j++ )
+			for( int i = 0; i < 9; i++ )
 				swap( &matrix[i][a+j], &matrix[i][b+j]);
-			}
-		}
-	}
 }
 void Sudoku::swap( int* element_1, int* element_2 ){
 	int hold = *element_1;
@@ -243,48 +236,36 @@ void Sudoku::swap( int* element_1, int* element_2 ){
 }
 void Sudoku::flip( bool number ){
 	if( number == 0 ){																														//vertically
-		for( int i = 0; i < 4; i++ ){
+		for( int i = 0; i < 4; i++ )
 			for( int j = 0; j < 9; j++ )
 				swap( &matrix[i][j], &matrix[8-i][j]);
-		}
 	}
 	else {																																				//horizontally
-		for( int j = 0; j < 4; j++ ){
+		for( int j = 0; j < 4; j++ )
 			for( int i = 0; i < 9; i++ )
 				swap( &matrix[i][j], &matrix[i][8-j]);
-		}
 	}
 }
 void Sudoku::rotate( int number ){
-	number = number%4;
-	if( number != 0 ){
-		int **array = new int*[9];
-		for( int i = 0; i < 9; i++ )	array[i] = new int[9];
-		for( int i = 0; i < 9; i++ ){
+	int **array = new int*[9];
+	for( int i = 0; i < 9; i++ )	array[i] = new int[9];
+	for( int i = 0; i < 9; i++ )
+		for( int j = 0; j < 9; j++ )
+			array[i][j] = matrix[i][j];
+	if( number%4 == 1 )
+		for( int i = 0; i < 9; i++ )
 			for( int j = 0; j < 9; j++ )
-				array[i][j] = matrix[i][j];
-		}
-		if( number == 1 ){
-			for( int i = 0; i < 9; i++ ){
-				for( int j = 0; j < 9; j++ )
-					matrix[i][j] = array[8-j][i];
-			}
-		}
-		else if( number == 2 ){
-			for( int i = 0; i < 9; i++){
-				for( int j = 0; j < 9; j++ )
-					matrix[i][j] = array[8-i][8-j];
-			}
-		}
-		else {
-			for( int i = 0; i < 9; i++ ){
-				for( int j = 0; j < 9; j++)
-					matrix[i][j] = array[j][8-i];
-			}
-		}
-		//for( int k = 0; k < 9; k++ ) delete []array[k];
-		//delete []array;
-	}
+				matrix[i][j] = array[8-j][i];
+	else if( number%4 == 2 )
+		for( int i = 0; i < 9; i++)
+			for( int j = 0; j < 9; j++ )
+				matrix[i][j] = array[8-i][8-j];
+	else if( number%4 == 3 )
+		for( int i = 0; i < 9; i++ )
+			for( int j = 0; j < 9; j++)
+				matrix[i][j] = array[j][8-i];
+	for( int k = 0; k < 9; k++ ) delete []array[k];
+	delete []array;
 }
 void Sudoku::transform(){
 	flip( 0 );
@@ -295,49 +276,45 @@ void Sudoku::transform(){
 void Sudoku::reset_current_state( int& current_state ){
 	current_state = 0;
 }
-bool Sudoku::solve_sub( bool multiple, Backtrack* Node, int posX, int posY, int current_state, int counter ){
+bool Sudoku::solve_sub( bool multiple, Backtrack* Stack, int posX, int posY, int current_state, int counter ){
 	while( current_state < counter ){
-	  int x = assign_value( multiple, Node, posX, posY, current_state );
+	  int x = assign_value( multiple, Stack, posX, posY, current_state );
 		if ( x <= 9 && x >= 1 ){
-			Node[current_state].x = posX;
-			Node[current_state].y = posY;
-			Node[current_state].value = x;
+			Stack[current_state].x = posX;
+			Stack[current_state].y = posY;
+			Stack[current_state].value = x;
 			matrix[posX][posY] = x;
 			current_state++;
 			find_zero( posX, posY );
 		}
 		else {
 			int reset_value = ( multiple == 0 ? 0 : 10 );
-			Node[current_state].value = reset_value ;
+			Stack[current_state].value = reset_value ;
 			matrix[posX][posY] = 0;
 			current_state--;
-			posX = Node[current_state].x;
-			posY = Node[current_state].y;
+			posX = Stack[current_state].x;
+			posY = Stack[current_state].y;
 		}
 		if( current_state < 0 )
 			return false;
 	}
 	return true;
 }
-void Sudoku::reset_the_sudoku( Backtrack* Node, int counter ){
+void Sudoku::reset_the_sudoku( Backtrack* Stack, int counter ){
 	for( int k = 0; k < counter; k++ ){
-		matrix[Node[k].x][Node[k].y] = 0;
+		matrix[Stack[k].x][Stack[k].y] = 0;
 	}
 }
 void Sudoku::copyFunc(){
-	for( int i = 0; i < 9; i++ ){
+	for( int i = 0; i < 9; i++ )
 		for( int j = 0; j < 9; j++ )
 			copy[i][j] = matrix[i][j];
-	}
 }
 bool Sudoku::NotTheSame(){
-	for( int i = 0; i < 9; i++){
-		for( int j = 0; j < 9; j++ ){
-				if( copy[i][j] != matrix[i][j] ){
-					return true;
-				}
-		}
-	}
+	for( int i = 0; i < 9; i++)
+		for( int j = 0; j < 9; j++ )
+			if( copy[i][j] != matrix[i][j] )
+				return true;
 	return false;
 }
 void Sudoku::giveQuestion(){
