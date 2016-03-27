@@ -114,22 +114,18 @@ void Sudoku::solve(){
 	else if ( counter > 65 )
 		cout << '2' << endl;
 	else{
-		int posX,posY;
-		int current_state = 0;
 		Backtrack *Stack = new Backtrack[counter];
 
 		wash( Stack, counter, 0 );
-		find_zero( posX, posY );
-		bool track = solve_sub( 0, Stack, posX, posY, current_state, counter );
+		findAllZero( Stack );
+		bool track = solve_sub( 0, Stack, counter );
 		copyFunc();
 		reset_the_sudoku( Stack, counter );
 		if( track == false )
 			cout << '0' << endl;
 		else {
-			reset_current_state( current_state );
 			wash( Stack, counter, 1 );
-			find_zero( posX, posY );
-			solve_sub( 1, Stack, posX, posY, current_state, counter );
+			solve_sub( 1, Stack, counter );
 			if( NotTheSame() )
 				cout << '2' << endl;
 			else{
@@ -151,34 +147,35 @@ int Sudoku::count_zero(){
 				counter++;
 	return counter;
 }
-void Sudoku::find_zero( int& posX, int& posY ){
-	for( int i = 0; i < 9; i++ ){
+void Sudoku::findAllZero( Backtrack* Stack ){
+	int current = 0;
+	for( int i = 0; i < 9; i++ )
 		for( int j = 0; j < 9; j++ )
 			if( matrix[i][j] == 0 ){
-				posX = i;
-				posY = j;
-				break;
+				Stack[current].x = i;
+				Stack[current].y = j;
+				current++;
 			}
-	}
 }
 void Sudoku::wash( Backtrack *Stack, int counter, int number ){
 	int init_value = ( number == 0 ? 0 : 10 ) ;
 	for( int i = 0; i < counter; i++ )
 		Stack[i].value = init_value;
 }
-int Sudoku::assign_value( bool multiple, Backtrack *Stack, int posX, int posY, int current_state ){
-		int delta;
-		if( multiple == 0 ) delta = 1;
-		else delta = -1;
+int Sudoku::assign_value( bool multiple, Backtrack *Stack, int current_state ){
+		int delta = 1;
+		if( multiple == 1 ) delta = -1;
 		Stack[current_state].value += delta;
-		while( !Safe( posX, posY, Stack[current_state].value ) )
+		while( !Safe( Stack[current_state].x, Stack[current_state].y, Stack[current_state].value ) )
 			Stack[current_state].value += delta;
 		return Stack[current_state].value;
 }
 bool Sudoku::Safe( int posX, int posY, int value ){
-	if( row_safe( posX, value ) && col_safe( posY, value ) && cell_safe( posX, posY, value ) )
-	 	return true;
-	else return false;
+	if( row_safe( posX, value ) )
+		if( col_safe( posY, value ) )
+			if ( cell_safe( posX, posY, value ) )
+	 			return true;
+ return false;
 }
 bool Sudoku::row_safe( int posX, int value ){
 	for( int j = 0; j < 9; j++ )
@@ -273,27 +270,20 @@ void Sudoku::transform(){
 	changeCol( 2, 0 );
 	print();
 }
-void Sudoku::reset_current_state( int& current_state ){
-	current_state = 0;
-}
-bool Sudoku::solve_sub( bool multiple, Backtrack* Stack, int posX, int posY, int current_state, int counter ){
+bool Sudoku::solve_sub( bool multiple, Backtrack* Stack, int counter ){
+	int current_state = 0;
 	while( current_state < counter ){
-	  int x = assign_value( multiple, Stack, posX, posY, current_state );
-		if ( x <= 9 && x >= 1 ){
-			Stack[current_state].x = posX;
-			Stack[current_state].y = posY;
-			Stack[current_state].value = x;
-			matrix[posX][posY] = x;
+	  int temp = assign_value( multiple, Stack, current_state );
+		if ( temp <= 9 && temp >= 1 ){
+			Stack[current_state].value = temp;
+			matrix[Stack[current_state].x][Stack[current_state].y] = temp;
 			current_state++;
-			find_zero( posX, posY );
 		}
 		else {
 			int reset_value = ( multiple == 0 ? 0 : 10 );
 			Stack[current_state].value = reset_value ;
-			matrix[posX][posY] = 0;
+			matrix[Stack[current_state].x][Stack[current_state].y] = reset_value;
 			current_state--;
-			posX = Stack[current_state].x;
-			posY = Stack[current_state].y;
 		}
 		if( current_state < 0 )
 			return false;
