@@ -33,62 +33,43 @@ void Sudoku::readIn(){
 	}
 }
 void Sudoku::print(){
-	for( int i = 0; i < 9; i++ ){
-		for( int j = 0; j < 9; j++ ){
+	for( int i = 0; i < 9; i++ )
+		for( int j = 0; j < 9; j++ )
 			cout << matrix[i][j] <<" ";
-		}
 		cout << endl;
-	}
 }
 bool Sudoku::exam(){
-	if ( row_exam() && col_exam() && cell_exam() )
-		return true;
-	else
-		return false;
+	if ( row_col_exam() )
+			if( cell_exam() )
+				return true;
+	return false;
 }
-bool Sudoku::row_exam(){
+bool Sudoku::row_col_exam(){
 	int* array_a = new int[10];
-
+	int* array_b = new int[10];
 	for( int i = 0; i < 9; i++ ){
-		for( int l = 0; l < 10; l++ )
+		for( int l = 0; l < 10; l++ ){
 			array_a[l] = 0;
+			array_b[l] = 0;
+		}
 		for( int j = 0; j < 9; j++ ){
 			if( matrix[i][j] == 0 ) continue;
 			array_a[ matrix[i][j] ]++;
+			array_b[ matrix[j][i] ]++;
 		}
-		for( int k = 1; k < 10 ; k++ ){
-			if( array_a[k] > 1 ){
+		for( int k = 1; k < 10 ; k++ )
+			if( array_a[k] > 1 || array_b [k] > 1 )
 				return false;
-			}
-		}
 	}
 	delete []array_a;
-	return true;
-}
-bool Sudoku::col_exam(){
-	int* array_b = new int[10];
-
-	for( int j = 0; j < 9; j++ ){
-		for( int k = 0; k < 10; k++ )
-			array_b[k] = 0;
-		for( int i = 0; i < 9; i++ ){
-			if( matrix[i][j] == 0 ) continue;
-				array_b[ matrix[i][j] ]++;
-		}
-		for( int k = 1; k < 10; k++ ){
-			if( array_b[k] > 1 ){
-				return false;
-			}
-		}
-	}
 	delete []array_b;
 	return true;
 }
 bool Sudoku::cell_exam(){
 	int* array_c = new int[10];
 
-	for( int i = 0; i <= 6 ; i = i+3 ){							 														// Imporant parameters here
-		for( int j = 0; j <= 6; j = j+3 ){						 														// 3 digits per cell
+	for( int i = 0; i <= 6 ; i = i+3 ){							 														  // Imporant parameters here
+		for( int j = 0; j <= 6; j = j+3 ){						 														  // 3 digits per cell
 			for( int k = 0; k < 10; k++ )
 				array_c[k] = 0;
 			for( int p = i; p < i+3; p++ ){
@@ -109,15 +90,15 @@ bool Sudoku::cell_exam(){
 }
 void Sudoku::solve(){
 	int counter = count_zero();
-	if( exam() == 0 )
+	if( !exam() )
 		cout << '0' << endl;
-	else if ( counter > 65 )
+	else if ( examMultiSol( counter ) )
 		cout << '2' << endl;
 	else{
 		Backtrack *Stack = new Backtrack[counter];
-
-		wash( Stack, counter, 0 );
 		findAllZero( Stack );
+		//sortStack( Stack, 0, counter-1 );
+		wash( Stack, counter, 0 );
 		bool track = solve_sub( 0, Stack, counter );
 		copyFunc();
 		reset_the_sudoku( Stack, counter );
@@ -149,9 +130,10 @@ int Sudoku::count_zero(){
 }
 void Sudoku::findAllZero( Backtrack* Stack ){
 	int current = 0;
-	for( int i = 0; i < 9; i++ )
-		for( int j = 0; j < 9; j++ )
+	for( int i = 0; i <= 8; i++ )
+		for( int j = 0; j <= 8; j++ )
 			if( matrix[i][j] == 0 ){
+				//Stack[current].rank = countRank( i, j );
 				Stack[current].x = i;
 				Stack[current].y = j;
 				current++;
@@ -171,21 +153,14 @@ int Sudoku::assign_value( bool multiple, Backtrack *Stack, int current_state ){
 		return Stack[current_state].value;
 }
 bool Sudoku::Safe( int posX, int posY, int value ){
-	if( row_safe( posX, value ) )
-		if( col_safe( posY, value ) )
+	if( row_col_safe( posX, posY, value ) )
 			if ( cell_safe( posX, posY, value ) )
 	 			return true;
  return false;
 }
-bool Sudoku::row_safe( int posX, int value ){
-	for( int j = 0; j < 9; j++ )
-		if( value == matrix[posX][j] )
-			return false;
-	return true;
-}
-bool Sudoku::col_safe( int posY, int value ){
-	for( int i= 0; i < 9; i++ )
-		if( value == matrix[i][posY])
+bool Sudoku::row_col_safe( int posX, int posY, int value ){
+	for( int k = 0; k < 9; k++ )
+		if( value == matrix[posX][k] ||  value == matrix[k][posY] )
 			return false;
 	return true;
 }
@@ -337,4 +312,60 @@ void Sudoku::giveQuestion(){
 	matrix[8][4] = 6;
 	matrix[8][7] = 7;
 	print();
+}
+int Sudoku::countRank( int posX, int posY ){
+	int counter = 0;
+	for( int k = 1; k < 10; k++ )
+		if( Safe( posX, posY, k ) )
+			counter++;
+	return counter;
+}
+void Sudoku::sortStack( Backtrack* Stack, int p, int r ){
+	if( p < r ){
+		int q = partition( Stack, p, r );
+		sortStack( Stack, p, q-1 );
+		sortStack( Stack, q+1, r );
+	}
+}
+int Sudoku::partition( Backtrack* Stack, int p, int r ){
+	int x = Stack[r].rank;
+	int i = p-1;
+	for( int j = p; j <= r-1; j++ ){
+		if( Stack[j].rank <= x ){
+			i = i+1;
+			swapFunc( &Stack[i], &Stack[j] );
+		}
+	}
+	swapFunc( &Stack[i+1], &Stack[r] );
+	return i+1;
+}
+void Sudoku::swapFunc( Backtrack* element_A,  Backtrack* element_B ){
+	Backtrack hold = *element_A;
+	*element_A = *element_B;
+	*element_B = hold;
+}
+bool Sudoku::examMultiSol( int counter ){
+	if( counter > 64 ) return true;																								// first condition
+	else if( multi_second() ) return true;
+	return false;
+}
+bool Sudoku::multi_second(){
+	int record_row = 0;
+	int record_col = 0;
+	for( int i = 0; i < 9; i++ ){
+		int count_row = 0;
+		int count_col = 0;
+		for( int j = 0; j < 9; j++ ){
+			if( matrix[i][j] == 0 )
+				count_row++;
+			if ( matrix[j][i] == 0 )
+				count_col++;
+		}
+		if( count_row == 9 )
+				record_row++;
+		if( count_col == 9 )
+				record_col++;
+		if( record_row == 2 || record_col == 2 ) return true;
+	}
+	return false;
 }
