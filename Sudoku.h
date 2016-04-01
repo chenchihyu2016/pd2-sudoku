@@ -23,7 +23,6 @@ private:
   int** copy;
   bool exam();
   bool examMultiSol( int counter );
-  bool multi_second();
   bool row_col_exam();
   bool cell_exam();
   int count_zero();
