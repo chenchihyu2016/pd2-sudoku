@@ -25,14 +25,16 @@ void Sudoku::readIn(){
 	}
 }
 void Sudoku::print(){
-	for( int i = 0; i < 9; i++ )
-		for( int j = 0; j < 9; j++ )
+	for( int i = 0; i < 9; i++ ){
+		for( int j = 0; j < 9; j++ ){
 			cout << matrix[i][j] <<" ";
+		}
 		cout << endl;
+	}
 }
 bool Sudoku::exam(){
-	if ( row_col_exam() )
-			if( cell_exam() )
+	if( cell_exam() )
+		if ( row_col_exam() )
 				return true;
 	return false;
 }
@@ -88,6 +90,7 @@ void Sudoku::solve(){
 	else if( examMultiSol( counter ) )
 	 	cout << '2' << endl;
 	else{
+		bool control = false;
 		copy = new int*[9];
 		for( int k = 0; k < 9; k++ ) copy[k] = new int[9];
 	  for( int i = 0; i < 9; i++ )
@@ -105,7 +108,7 @@ void Sudoku::solve(){
 		else {
 			wash( Stack, counter, 1 );
 			solve_sub( 1, Stack, counter );
-			if( NotTheSame() )
+			if( NotTheSame( Stack, counter ) )
 				cout << '2' << endl;
 			else{
 				cout << '1' << endl;
@@ -155,9 +158,9 @@ int Sudoku::assign_value( bool multiple, Backtrack *Stack, int current_state ){
 		return Stack[current_state].value;
 }
 bool Sudoku::Safe( int posX, int posY, int value ){
-	if( row_col_safe( posX, posY, value ) )
-			if ( cell_safe( posX, posY, value ) )
-	 			return true;
+	if ( cell_safe( posX, posY, value ) )
+		if( row_col_safe( posX, posY, value ) )
+			return true;
  return false;
 }
 bool Sudoku::row_col_safe( int posX, int posY, int value ){
@@ -278,11 +281,14 @@ void Sudoku::copyFunc(){
 		for( int j = 0; j < 9; j++ )
 			copy[i][j] = matrix[i][j];
 }
-bool Sudoku::NotTheSame(){
-	for( int i = 0; i < 9; i++)
-		for( int j = 0; j < 9; j++ )
-			if( copy[i][j] != matrix[i][j] )
+bool Sudoku::NotTheSame( Backtrack* Stack, int counter ){
+	int i, j;
+	for( int k = 0; k < counter; k++ ){
+		i = Stack[k].x;
+		j = Stack[k].y;
+		if( copy[i][j] != matrix[i][j] )
 				return true;
+	}
 	return false;
 }
 void Sudoku::giveQuestion(){

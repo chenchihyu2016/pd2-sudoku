@@ -36,7 +36,7 @@ private:
   bool solve_sub( bool multiple, Backtrack* Stack, int counter );
   void reset_the_sudoku( Backtrack* Stack, int counter );
   void copyFunc();
-  bool NotTheSame();
+  bool NotTheSame( Backtrack* Stack, int counter );
   int countRank( int posX, int posY );
   void sortStack( Backtrack* Stack, int p, int r );
   int partition( Backtrack* Stack, int p, int r );
